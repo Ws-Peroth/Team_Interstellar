@@ -12,9 +12,9 @@ EditorBuildSettings:
     path: Assets/Scenes/2scene.unity
     guid: 462cf3830bae940adaf849a9a2f92cb4
   - enabled: 1
-    path: Assets/Feedback/Feedback0320_task1/Scenes/TitleScene.unity
-    guid: bdc0a1a8e90734cf4b678ef3313685a9
-  - enabled: 1
-    path: Assets/Feedback/Feedback0320_task1/Scenes/MainGameScene.unity
+    path: Assets/Feedback/Feedback0320_task1/FixScenes/Title.unity
     guid: 57784ed28c900436e93cddba8ca8f601
+  - enabled: 1
+    path: Assets/Feedback/Feedback0320_task1/FixScenes/Main.unity
+    guid: bdc0a1a8e90734cf4b678ef3313685a9
   m_configObjects: {}

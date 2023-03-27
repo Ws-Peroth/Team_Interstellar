@@ -9,62 +9,63 @@ public class TitleScene : MonoBehaviour
     enum SceneList
     {
         FeedbackTitleScene = 2,
-        FeedbackMainGameScene
+        FeedbackMainGameScene = 3,
     }
-    [SerializeField] private Sprite[] slimeSprites = new Sprite[2];
-    [SerializeField] private SpriteRenderer slimeRenderer;
+    [SerializeField] private Image screenCoverImage;
+    [SerializeField] private Image startButtonLabelImage;
     [SerializeField] private Button startButton;
-    [SerializeField] private GameObject startButtonLabel;
 
     // fadeSpeed : 1초 동안에 변화할 alpha 값의 변화량
     // 0 ~ 1 범위 내의 수
-    [SerializeField] private float _fadeSpeed = 0.5f;
-    private Sprite startButtonLabelRenderer; 
+    [SerializeField] private const float FadeSpeed = 0.5f;
+    private bool isStarted = false;
 
 
     // Start is called before the first frame update
     void Start()
     {
-        startButtonLabelRenderer = startButtonLabel.GetComponent<Sprite>();
+        isStarted = false;
 
-        // 버튼을 클릭하였을 경우에 isStarted를 true로 변경
+        // 라벨이 페이드 효과를 반복하도록 하는 코루틴 실행
+        // Todo: Study about "Coroutine"
+        StartCoroutine(LoopingFadeEffect(startButtonLabelImage, FadeSpeed, false));
+
         startButton.onClick.AddListener(() => 
             {
+                if (isStarted) return;
+                isStarted = true;
+
+                StopAllCoroutines();
                 // isStarted가 눌러지면 Scene 교체 효과 시작
                 StartCoroutine(SceneChangeEffect());
             });
 
-        // 라벨이 페이드 효과를 반복하도록 하는 코루틴 실행
-        // Todo: Study about "Coroutine"
-        StartCoroutine(LoopingFadeEffect(startButtonLabelRenderer));
+        
     }
 
     IEnumerator SceneChangeEffect(){
         // Scene 전환 효과 속도를 0.75로 설정
         var sceneChangeEffectSpeed = 0.75f;
 
-        // 화면 전체를 덮고있는 startButton의 이미지 컴포넌트를 가져옴
-        var startButtonRenderer = startButton.gameObject.GetComponent<Sprite>();
-
         // StartButton의 색을 검정(0,0,0)에 alpha가 0(투명한)인 색으로 지정
-        startButtonRenderer.color = new Color(0, 0, 0, 0);
+        screenCoverImage.color= new Color(0, 0, 0, 0);
 
         // FadeIn 효과를 시작
-        StartCoroutine(FadeIn(startButtonRenderer, sceneChangeEffectSpeed));
+        StartCoroutine(FadeIn(screenCoverImage, sceneChangeEffectSpeed));
         
         // FadeIn 효과가 끝날때 까지 대기
-        yield return WaitForSeconds(1 / sceneChangeEffectSpeed);
+        yield return new WaitForSeconds(1 / sceneChangeEffectSpeed);
 
         // FadeIn효과가 끝나면 scene을 전환
-        SceneManager.LoadScene((int)SceneList.FeedbackTitleScene);
+        SceneManager.LoadScene((int)SceneList.FeedbackMainGameScene);
     }
 
-    // Sprite나 Image은 Texture2D를 상속받고 있다.
-    IEnumerator FadeOut(Sprite texture, float fadeSpeed = 0){
+    
+    IEnumerator FadeOut(Image texture, float fadeSpeed = 0){
 
         // 매개변수로 주어진 fadeSpeed이 0이면 멤버변수인 _fadeSpeed를 fadeSpeed로 사용하고,
         // fadeSpeed가 0이 아니라면 매개변수로 주어진 fadeSpeed를 그대로 이용한다.
-        fadeSpeed = fadeSpeed == 0 ? _fadeSpeed : fadeSpeed;
+        fadeSpeed = fadeSpeed == 0 ? FadeSpeed : fadeSpeed;
 
         // 텍스쳐 Fade out
         // 텍스쳐의 alpha값이 0 보다 크면 반복
@@ -90,10 +91,10 @@ public class TitleScene : MonoBehaviour
         }
     }
 
-    IEnumerator FadeIn(Sprite texture, float fadeSpeed = 0){
+    IEnumerator FadeIn(Image texture, float fadeSpeed = 0){
         // 매개변수로 주어진 fadeSpeed이 0이면 멤버변수인 _fadeSpeed를 fadeSpeed로 사용하고,
         // fadeSpeed가 0이 아니라면 매개변수로 주어진 fadeSpeed를 그대로 이용한다.
-        fadeSpeed = fadeSpeed == 0 ? _fadeSpeed : fadeSpeed;
+        fadeSpeed = fadeSpeed == 0 ? FadeSpeed : fadeSpeed;
 
         // 텍스쳐 Fade In
         // 텍스쳐의 alpha값이 1 보다 작으면 반복
@@ -119,32 +120,35 @@ public class TitleScene : MonoBehaviour
         }
     }
 
-    IEnumerator LoopingFadeEffect(Sprite texture, float fadeSpeed = 0, bool isFadeInFirst = true){
+    IEnumerator LoopingFadeEffect(Image image, float fadeSpeed = 0, bool isFadeInFirst = true)
+    {
         // 매개변수로 주어진 fadeSpeed이 0이면 멤버변수인 _fadeSpeed를 fadeSpeed로 사용하고,
         // fadeSpeed가 0이 아니라면 매개변수로 주어진 fadeSpeed를 그대로 이용한다.
-        fadeSpeed = fadeSpeed == 0 ? _fadeSpeed : fadeSpeed;
+        fadeSpeed = fadeSpeed == 0 ? FadeSpeed : fadeSpeed;
 
         // 텍스쳐의 색을 설정하기 위해, 현재 텍스쳐의 색을 가져옴
-        var settingColor = texture.color;
+        var settingColor = image.color;
         // settingColor의 alpha색을 isFadeInFirst에 따라,
         // FadeIn을 먼저 할거면 alpha를 0으로,
         // fadeOut을 먼저 할거면 alpha를 1로 바꾼다
         settingColor.a = isFadeInFirst ? 0 : 1;
 
         // settingColor의 값을 텍스쳐의 색에 대입한다
-        texture.color = settingColor;
+        image.color = settingColor;
 
-        while(true){
+
+        while(!isStarted)
+        {
             // 값 변경 전(완료 후) 대기 시간
             yield return new WaitForSeconds(0.5f);
 
             // alpha값이 1이면, FadeOut을 호출
-            if(texture.color.a == 1){
-                StartCoroutine(FadeIn(texture));
+            if(image.color.a == 1){
+                StartCoroutine(FadeOut(image));
             }
-            // 아니면 FadeOut을 호출
+            // 아니면 FadeIn을 호출
             else{
-                StartCoroutine(FadeOut(texture));
+                StartCoroutine(FadeIn(image));
             }
             // 코루틴이 종료될 때 까지 대기
             // 1초에 alpha값을 fadeSpeed 만큼 변경
@@ -152,11 +156,6 @@ public class TitleScene : MonoBehaviour
             // ex:  (1 / 1) / ( 1 / 2) = 2 / 1 = 2
             //      fadeSpeed가 0.5일때, t = 2
             yield return new WaitForSeconds(1 / fadeSpeed);
-
         }
-
-        // isStarted가 true가 되면 이 코루틴은 종료됨
-        // 코루틴 종료 구문
-        yield break;
     }
 }
